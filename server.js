@@ -162,27 +162,33 @@ const studentCourseProgressRoutes = require("./routes/student-routes/course-prog
 const commentRoutes = require("./routes/commentRoutes");
 const chatRoute = require("./routes/chat-routes/chatRoutes");
 const messageRoute = require("./routes/chat-routes/messageRoutes");
-const userRoutes = require("./controllers/chat-controller/userRoutes"); // ✅ Fixed path
+const userRoutes = require("./controllers/chat-controller/userRoutes");
 
 const app = express();
 const server = http.createServer(app);
+
+// ✅ Use environment variable for frontend origin in production
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST", "PATCH"],
+    origin: FRONTEND_URL,
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
   },
 });
 
 app.set("io", io);
+
+// ✅ Use Railway PORT environment variable
 const PORT = process.env.PORT || 5000;
 
 // Connect to DB
-connectDB();
+connectDB(process.env.MONGO_URI);
 
-// CORS setup
+// CORS setup for API
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: FRONTEND_URL,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -216,7 +222,6 @@ io.on("connection", (socket) => {
     try {
       currentUserId = userId;
       socket.join(userId);
-
       await User.findByIdAndUpdate(userId, { isOnline: true });
 
       io.emit("user-status", {
@@ -240,7 +245,6 @@ io.on("connection", (socket) => {
       console.log("🔴 Client disconnected:", socket.id);
       if (currentUserId) {
         const lastSeen = new Date();
-        console.log(`User ${currentUserId} disconnected at ${lastSeen}`);
         await User.findByIdAndUpdate(currentUserId, {
           isOnline: false,
           lastSeen,
@@ -270,5 +274,3 @@ app.use((err, req, res, next) => {
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
-
-
