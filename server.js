@@ -167,39 +167,41 @@ const userRoutes = require("./controllers/chat-controller/userRoutes");
 const app = express();
 const server = http.createServer(app);
 
-// ✅ Use environment variable for frontend origin in production
+// ====== CORS CONFIG ======
+const allowedOrigins = [
+  "https://coursexpert.vercel.app",
+  "http://localhost:3000" // for local testing
+];
 
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Requested-With"]
+}));
+app.options("*", cors());
+
+// ====== SOCKET.IO ======
 const io = new Server(server, {
   cors: {
-    origin: "https://coursexpert.vercel.app",
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
     credentials: true,
   },
 });
-
 app.set("io", io);
 
-// ✅ Use Railway PORT environment variable
-const PORT = process.env.PORT || 5000;
-
-// Connect to DB
-connectDB(process.env.MONGO_URI);
-
-// CORS setup for API
-app.use(
-  cors({
-    origin: "https://coursexpert.vercel.app",
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-app.options("*", cors());
-
-// Middleware
+// ====== MIDDLEWARE ======
 app.use(express.json());
 
-// Routes
+// ====== DB CONNECTION ======
+connectDB(process.env.MONGO_URI);
+
+// ====== ROUTES ======
+app.get("/", (req, res) => {
+  res.json({ message: "API is running" });
+});
+
 app.use("/auth", authRoutes);
 app.use("/media", mediaRoutes);
 app.use("/instructor/course", instructorCourseRoutes);
@@ -215,7 +217,6 @@ app.use("/api/users", userRoutes);
 // ===== SOCKET.IO EVENTS =====
 io.on("connection", (socket) => {
   console.log("🟢 Client connected:", socket.id);
-
   let currentUserId = null;
 
   socket.on("join", async (userId) => {
@@ -227,7 +228,7 @@ io.on("connection", (socket) => {
       io.emit("user-status", {
         userId,
         isOnline: true,
-        lastSeen: User.lastSeen || null,
+        lastSeen: null,
       });
 
       console.log(`✅ User ${userId} is now online`);
@@ -261,7 +262,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// Error handler
+// ===== ERROR HANDLER =====
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
@@ -270,7 +271,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
+// ===== START SERVER =====
+const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
