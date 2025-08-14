@@ -171,7 +171,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "https://coursexpert-git-main-mayur-panchals-projects-c3a3802c.vercel.app",
+    origin: "https://coursexpert.vercel.app",
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
     credentials: true,
   },
@@ -188,7 +188,7 @@ connectDB(process.env.MONGO_URI);
 // CORS setup for API
 app.use(
   cors({
-    origin: "https://coursexpert-git-main-mayur-panchals-projects-c3a3802c.vercel.app",
+    origin: "https://coursexpert.vercel.app",
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
