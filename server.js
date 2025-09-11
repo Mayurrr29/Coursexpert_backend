@@ -170,7 +170,7 @@ const server = http.createServer(app);
 // ====== CORS CONFIG ======
 const allowedOrigins = [
   "https://coursexpert.vercel.app",
-  "http://localhost:3000" // for local testing
+ "http://localhost:5173", // for local testing
 ];
 
 app.use(cors({
